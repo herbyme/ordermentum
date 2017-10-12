@@ -1,0 +1,60 @@
+extends layout
+
+block content
+  .container
+    h1= title
+    form#input-money-form
+      .form-group
+        label(for='CurrencyTypeInput') Currency
+        select.form-control#currency-selection
+          option AUD
+      .form-group
+        label(for='CoinInput') Amount ($)
+        input.form-control#money-input(type='number' min='0' value='0' step='.05')
+      button.btn.btn-primary#money-button(type='submit') Enter Money
+    hr
+    h3#total-text Total($): 0.00
+    .invisible#candy-div
+      form#input-money-form
+        .form-group
+          label(for='CandyInput') Candy
+          select.form-control#candy-selection
+            option
+          button.btn.btn-primary#candy-button(type='submit') Enter Candy
+    button.btn.btn-primary(type='submit')#eject-button Eject Money
+  script.
+    $(function() {
+      $('#money-button').click(function(e) {
+        e.preventDefault();
+        $.post('/valid/coin', {
+          currency: $('#currency-selection').val(),
+          amount: $('#money-input').val(),
+          total: $('#total-text').text().split('Total($): ')[1],
+        })
+        .done(function(result) {
+          if (!result.error) {
+            var currentAmount = parseFloat($('#total-text').text().split('Total($): ')[1]);
+            var newTotal = currentAmount + parseFloat(result.result);
+            $('#total-text').text('Total($): ' + newTotal);
+
+            if (result.candy.length > 0) {
+              var $el = $('#candy-selection');
+              $el.empty(); // remove old options
+              for (var i = 0; i < result.candy.length; i++) {
+                $el.append($('<option></option>')
+                .attr('value', result.candy[i]).text(result.candy[i]));
+              }
+              $('#candy-div').removeClass('invisible');
+            } else {
+              $('#candy-div').addClass('invisible');
+            }
+          } else { /* Display error message to user */ }
+        });
+      });
+
+      // Resets the amount of money entered
+      $('#eject-button').click(function(e) {
+        e.preventDefault();
+        $('#total-text').text('Total($): 0.00');
+      });
+    });
